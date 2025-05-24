@@ -22,7 +22,7 @@ from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-# Enhanced CORS configuration to include production domains
+# Enhanced CORS configuration for production and development
 CORS(app,
      origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", 
               "http://127.0.0.1:5173", "https://newgenius-frontend.vercel.app", "https://newsgenius-backend.onrender.com"],
@@ -31,22 +31,26 @@ CORS(app,
      supports_credentials=True
 )
 
-
-# Additional CORS handling for preflight requests with production domain
+# More robust CORS handling for preflight requests
 @app.before_request
 def handle_preflight():
     if request.method == "OPTIONS":
         response = jsonify({'message': 'OK'})
         origin = request.headers.get('Origin', '')
         
-        # Allow specific origins
-        allowed_origins = ["http://localhost:3000", "http://localhost:3001", 
-                          "http://localhost:5173", "http://127.0.0.1:5173", 
-                          "https://newgenius-frontend.vercel.app", "https://newsgenius-backend.onrender.com"]
+        # Allow specific origins with proper spelling
+        allowed_origins = [
+            "http://localhost:3000", "http://localhost:3001", 
+            "http://localhost:5173", "http://127.0.0.1:5173", 
+            "https://newgenius-frontend.vercel.app",  # Note: You had "newgenius" not "newsgenius"
+            "https://newsgenius-backend.onrender.com"
+        ]
         
+        # More permissive origin handling for production
         if origin in allowed_origins:
             response.headers.add("Access-Control-Allow-Origin", origin)
         else:
+            # In production, specifically allow the frontend domain
             response.headers.add("Access-Control-Allow-Origin", "https://newgenius-frontend.vercel.app")
             
         response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization,Accept,Origin,X-Requested-With")
@@ -1035,6 +1039,24 @@ def delete_category(user_id, category_id):
         error_response = jsonify({"error": f"Failed to delete category: {str(e)}"})
         error_response.headers.add("Access-Control-Allow-Origin", request.headers.get('Origin', '*'))
         return error_response, 500
+
+@app.after_request
+def add_cors_headers(response):
+    origin = request.headers.get('Origin', '')
+    allowed_origins = [
+        "http://localhost:3000", "http://localhost:3001", 
+        "http://localhost:5173", "http://127.0.0.1:5173", 
+        "https://newgenius-frontend.vercel.app",
+        "https://newsgenius-backend.onrender.com"
+    ]
+    
+    if origin in allowed_origins:
+        response.headers.add("Access-Control-Allow-Origin", origin)
+    else:
+        response.headers.add("Access-Control-Allow-Origin", "https://newgenius-frontend.vercel.app")
+        
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
