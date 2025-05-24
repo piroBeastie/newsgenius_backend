@@ -1005,4 +1005,6 @@ def delete_category(user_id, category_id):
         return error_response, 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    mode = os.environ.get('DEBUG', 'False')
+    app.run(host='0.0.0.0', port=port, debug=mode )
