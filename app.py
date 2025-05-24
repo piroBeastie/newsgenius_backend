@@ -25,7 +25,7 @@ app = Flask(__name__)
 # Enhanced CORS configuration to include production domains
 CORS(app,
      origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", 
-              "http://127.0.0.1:5173", "https://newgenius-frontend.vercel.app"],
+              "http://127.0.0.1:5173", "https://newgenius-frontend.vercel.app", "https://newsgenius-backend.onrender.com"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
      allow_headers=["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
      supports_credentials=True
@@ -42,7 +42,7 @@ def handle_preflight():
         # Allow specific origins
         allowed_origins = ["http://localhost:3000", "http://localhost:3001", 
                           "http://localhost:5173", "http://127.0.0.1:5173", 
-                          "https://newgenius-frontend.vercel.app"]
+                          "https://newgenius-frontend.vercel.app", "https://newsgenius-backend.onrender.com"]
         
         if origin in allowed_origins:
             response.headers.add("Access-Control-Allow-Origin", origin)
