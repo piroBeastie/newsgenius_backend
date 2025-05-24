@@ -22,23 +22,33 @@ from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-# Enhanced CORS configuration for DELETE method
-from flask_cors import CORS
-
+# Enhanced CORS configuration to include production domains
 CORS(app,
-     origins="*",
+     origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", 
+              "http://127.0.0.1:5173", "https://newgenius-frontend.vercel.app"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
      allow_headers=["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
      supports_credentials=True
 )
 
 
-# Additional CORS handling for preflight requests
+# Additional CORS handling for preflight requests with production domain
 @app.before_request
 def handle_preflight():
     if request.method == "OPTIONS":
         response = jsonify({'message': 'OK'})
-        response.headers.add("Access-Control-Allow-Origin", request.headers.get('Origin', '*'))
+        origin = request.headers.get('Origin', '')
+        
+        # Allow specific origins
+        allowed_origins = ["http://localhost:3000", "http://localhost:3001", 
+                          "http://localhost:5173", "http://127.0.0.1:5173", 
+                          "https://newgenius-frontend.vercel.app"]
+        
+        if origin in allowed_origins:
+            response.headers.add("Access-Control-Allow-Origin", origin)
+        else:
+            response.headers.add("Access-Control-Allow-Origin", "https://newgenius-frontend.vercel.app")
+            
         response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization,Accept,Origin,X-Requested-With")
         response.headers.add('Access-Control-Allow-Methods', "GET,POST,PUT,DELETE,OPTIONS")
         response.headers.add('Access-Control-Allow-Credentials', 'true')
@@ -957,9 +967,21 @@ def delete_category(user_id, category_id):
     # Handle preflight request
     if request.method == 'OPTIONS':
         response = jsonify({'message': 'OK'})
-        response.headers.add("Access-Control-Allow-Origin", request.headers.get('Origin', '*'))
+        origin = request.headers.get('Origin', '')
+        
+        # Allow specific origins
+        allowed_origins = ["http://localhost:3000", "http://localhost:3001", 
+                          "http://localhost:5173", "http://127.0.0.1:5173", 
+                          "https://newgenius-frontend.vercel.app"]
+        
+        if origin in allowed_origins:
+            response.headers.add("Access-Control-Allow-Origin", origin)
+        else:
+            response.headers.add("Access-Control-Allow-Origin", "https://newgenius-frontend.vercel.app")
+            
         response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
         response.headers.add('Access-Control-Allow-Methods', "DELETE,OPTIONS")
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response, 200
     
     try:
@@ -987,17 +1009,27 @@ def delete_category(user_id, category_id):
         
         logger.info(f"✅ Successfully deleted category {category_id} and {deleted_news_count} news items for user {user_id}")
         
+        # Update the CORS headers in the response
         response = jsonify({
             "message": "Category deleted successfully",
             "deletedNewsItems": deleted_news_count
         })
         
         # Add CORS headers to response
-        response.headers.add("Access-Control-Allow-Origin", request.headers.get('Origin', '*'))
+        origin = request.headers.get('Origin', '')
+        allowed_origins = ["http://localhost:3000", "http://localhost:3001", 
+                         "http://localhost:5173", "http://127.0.0.1:5173", 
+                         "https://newgenius-frontend.vercel.app"]
+        
+        if origin in allowed_origins:
+            response.headers.add("Access-Control-Allow-Origin", origin)
+        else:
+            response.headers.add("Access-Control-Allow-Origin", "https://newgenius-frontend.vercel.app")
+            
         response.headers.add('Access-Control-Allow-Credentials', 'true')
         
         return response, 200
-        
+    
     except Exception as e:
         logger.error(f"❌ Error deleting category {category_id}: {e}")
         error_response = jsonify({"error": f"Failed to delete category: {str(e)}"})
