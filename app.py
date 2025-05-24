@@ -23,12 +23,15 @@ from bs4 import BeautifulSoup
 app = Flask(__name__)
 
 # Enhanced CORS configuration for DELETE method
-CORS(app, 
-     origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "http://127.0.0.1:5173"],
+from flask_cors import CORS
+
+CORS(app,
+     origins="*",
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
      allow_headers=["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
      supports_credentials=True
 )
+
 
 # Additional CORS handling for preflight requests
 @app.before_request
