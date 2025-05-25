@@ -13,6 +13,10 @@ Intelligent backend API for NewsGenius that aggregates news from multiple source
 
 **🔗 Backend URL**: `https://newsgenius-backend.onrender.com/`
 
+## 🌕 Backend Repo
+
+**🔗 [newsgenius_backend](https://github.com/piroBeastie/newsgenius_frontend)**
+
 ## ✨ Core Features
 
 ### 🤖 AI-Powered Intelligence
