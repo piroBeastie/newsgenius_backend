@@ -15,7 +15,7 @@ Intelligent backend API for NewsGenius that aggregates news from multiple source
 
 ## ☀️ FrontEnd Repo
 
-**🔗 [newsgenius_frontend](https://github.com/piroBeastie/newsgenius_frontend)**
+**🔗 [newsgenius_frontend](https://github.com/piroBeastie/newgenius_frontend)**
 
 ## ✨ Core Features
 
