@@ -7,3 +7,4 @@ beautifulsoup4==4.12.2
 lxml==4.9.3
 dotenv
 asyncio
+flask[async]==2.3.3
