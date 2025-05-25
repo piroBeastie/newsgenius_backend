@@ -22,41 +22,23 @@ from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-# Enhanced CORS configuration for production and development
-CORS(app,
-     origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", 
-              "http://127.0.0.1:5173", "https://newgenius-frontend.vercel.app", "https://newsgenius-backend.onrender.com"],
-     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-     allow_headers=["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
-     supports_credentials=True
-)
+# Simplified CORS solution that fixes the duplicate header issue
+CORS_ALLOWED_ORIGINS = [ 
+    "http://localhost:5173",
+    "https://newgenius-frontend.vercel.app"
+]
 
-# More robust CORS handling for preflight requests
-@app.before_request
-def handle_preflight():
-    if request.method == "OPTIONS":
-        response = jsonify({'message': 'OK'})
-        origin = request.headers.get('Origin', '')
-        
-        # Allow specific origins with proper spelling
-        allowed_origins = [
-            "http://localhost:3000", "http://localhost:3001", 
-            "http://localhost:5173", "http://127.0.0.1:5173", 
-            "https://newgenius-frontend.vercel.app",  # Note: You had "newgenius" not "newsgenius"
-            "https://newsgenius-backend.onrender.com"
-        ]
-        
-        # More permissive origin handling for production
-        if origin in allowed_origins:
-            response.headers.add("Access-Control-Allow-Origin", origin)
-        else:
-            # In production, specifically allow the frontend domain
-            response.headers.add("Access-Control-Allow-Origin", "https://newgenius-frontend.vercel.app")
-            
-        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization,Accept,Origin,X-Requested-With")
-        response.headers.add('Access-Control-Allow-Methods', "GET,POST,PUT,DELETE,OPTIONS")
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        return response
+# Configure app with simple CORS - this is the ONLY place CORS headers should be set
+# Using supports_credentials=True and not setting methods/headers to let Flask-CORS handle it all
+CORS(app, origins=CORS_ALLOWED_ORIGINS, supports_credentials=True)
+
+# Remove the before_request handler - it's causing duplicate headers
+# @app.before_request 
+# def handle_preflight():
+#     ...
+
+# We've completely removed all custom CORS handling
+# Flask-CORS extension will handle everything automatically
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -239,7 +221,7 @@ async def fetch_real_news_with_newsapi(keywords):
     try:
         newsapi_key = os.environ.get("NEWSAPI_KEY")  # Get from newsapi.org
         
-        if newsapi_key == "YOUR_NEWSAPI_KEY":
+        if not newsapi_key or newsapi_key == "YOUR_NEWSAPI_KEY":
             logger.info("NewsAPI key not configured, skipping NewsAPI")
             return []
         
@@ -419,7 +401,7 @@ async def get_relevant_image_from_pexels(title, description=""):
                 # Pexels API (get free API key from pexels.com)
                 pexels_api_key = os.environ.get("PEXELS_API_KEY")  # Replace with actual key from pexels.com/api
                 
-                if pexels_api_key == "YOUR_PEXELS_API_KEY":
+                if not pexels_api_key or pexels_api_key == "YOUR_PEXELS_API_KEY":
                     # Skip Pexels if no API key
                     continue
                 
@@ -601,6 +583,10 @@ async def fetch_real_news_newsdata(keywords):
     try:
         newsdata_url = "https://newsdata.io/api/1/latest"
         api_key = os.environ.get("NEWSDATA_API_KEY")
+        
+        if not api_key:
+            logger.info("NewsData API key not configured, skipping NewsData")
+            return []
         
         search_queries = [
             keywords[0] if keywords else "",
@@ -965,29 +951,9 @@ async def refresh_category_news_endpoint(user_id, category_id):
         logger.error(f"Error refreshing news: {e}")
         return jsonify({"error": "Failed to refresh news"}), 500
 
-# --- DELETE ENDPOINT (FIXED) ---
-@app.route('/api/user/<user_id>/categories/<category_id>', methods=['DELETE', 'OPTIONS'])
+# --- DELETE ENDPOINT (CLEAN VERSION) ---
+@app.route('/api/user/<user_id>/categories/<category_id>', methods=['DELETE'])
 def delete_category(user_id, category_id):
-    # Handle preflight request
-    if request.method == 'OPTIONS':
-        response = jsonify({'message': 'OK'})
-        origin = request.headers.get('Origin', '')
-        
-        # Allow specific origins
-        allowed_origins = ["http://localhost:3000", "http://localhost:3001", 
-                          "http://localhost:5173", "http://127.0.0.1:5173", 
-                          "https://newgenius-frontend.vercel.app"]
-        
-        if origin in allowed_origins:
-            response.headers.add("Access-Control-Allow-Origin", origin)
-        else:
-            response.headers.add("Access-Control-Allow-Origin", "https://newgenius-frontend.vercel.app")
-            
-        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization")
-        response.headers.add('Access-Control-Allow-Methods', "DELETE,OPTIONS")
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        return response, 200
-    
     try:
         logger.info(f"🗑️ DELETE request for category {category_id} by user {user_id}")
         
@@ -1013,52 +979,17 @@ def delete_category(user_id, category_id):
         
         logger.info(f"✅ Successfully deleted category {category_id} and {deleted_news_count} news items for user {user_id}")
         
-        # Update the CORS headers in the response
-        response = jsonify({
+        # Clean response without manual CORS headers
+        return jsonify({
             "message": "Category deleted successfully",
             "deletedNewsItems": deleted_news_count
-        })
+        }), 200
         
-        # Add CORS headers to response
-        origin = request.headers.get('Origin', '')
-        allowed_origins = ["http://localhost:3000", "http://localhost:3001", 
-                         "http://localhost:5173", "http://127.0.0.1:5173", 
-                         "https://newgenius-frontend.vercel.app"]
-        
-        if origin in allowed_origins:
-            response.headers.add("Access-Control-Allow-Origin", origin)
-        else:
-            response.headers.add("Access-Control-Allow-Origin", "https://newgenius-frontend.vercel.app")
-            
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        
-        return response, 200
-    
     except Exception as e:
         logger.error(f"❌ Error deleting category {category_id}: {e}")
-        error_response = jsonify({"error": f"Failed to delete category: {str(e)}"})
-        error_response.headers.add("Access-Control-Allow-Origin", request.headers.get('Origin', '*'))
-        return error_response, 500
-
-@app.after_request
-def add_cors_headers(response):
-    origin = request.headers.get('Origin', '')
-    allowed_origins = [
-        "http://localhost:3000", "http://localhost:3001", 
-        "http://localhost:5173", "http://127.0.0.1:5173", 
-        "https://newgenius-frontend.vercel.app",
-        "https://newsgenius-backend.onrender.com"
-    ]
-    
-    if origin in allowed_origins:
-        response.headers.add("Access-Control-Allow-Origin", origin)
-    else:
-        response.headers.add("Access-Control-Allow-Origin", "https://newgenius-frontend.vercel.app")
-        
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    return response
+        return jsonify({"error": f"Failed to delete category: {str(e)}"}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    mode = os.environ.get('DEBUG', 'False')
-    app.run(host='0.0.0.0', port=port, debug=mode )
+    port = int(os.environ.get('PORT', 8080))
+    debug_mode = os.environ.get('DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)
